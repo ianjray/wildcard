@@ -1,0 +1,66 @@
+.POSIX:
+.SUFFIXES:
+.SUFFIXES: .c .o .uto
+
+VERSION    = 1.0.0
+
+CC         = @CC@
+CCOV       = gcov
+CFLAGS     = @CFLAGS@
+CFLAGS_COV = @CFLAGS_COV@
+CFLAGS_SAN = @CFLAGS_SAN@
+INCLUDEDIR = @PREFIX@/include
+LD         = @LD@
+LIBDIR     = @PREFIX@/lib
+PREFIX     = @PREFIX@
+
+.PHONY: all
+all: libwildcard.a wildcard.coverage
+
+libwildcard.a: wildcard.o
+	$(LD) -r $^ -o $@
+
+.c.o:
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+.c.uto:
+	$(CC) $(CFLAGS) $(CFLAGS_COV) $(CFLAGS_SAN) -c $^ -o $@
+
+wildcard.coverage: wildcard.uto test_wildcard.c
+	$(CC) $(CFLAGS) $(CFLAGS_COV) $(CFLAGS_SAN) $^ -o $@
+	./$@
+	$(CCOV) wildcard.c
+	! grep "#####" wildcard.c.gcov |grep -ve "// UNREACHABLE$$"
+
+libwildcard.pc:
+	( echo 'Name: libwildcard' ;\
+	echo 'Version: $(VERSION)' ;\
+	echo 'Description: Wildcard matching in C' ;\
+	echo 'prefix=$(PREFIX)' ;\
+	echo 'exec_prefix=$${prefix}' ;\
+	echo 'includedir=$${prefix}/include' ;\
+	echo 'libdir=$${prefix}/lib' ;\
+	echo 'Cflags: -I$${includedir}' ;\
+	echo 'Libs: -L$${libdir} -lwildcard' ) > $@
+
+.PHONY: install
+install: wildcard.h libwildcard.a libwildcard.pc
+	mkdir -p $(INCLUDEDIR)/libwildcard
+	mkdir -p $(LIBDIR)/pkgconfig
+	install -m644 wildcard.h $(INCLUDEDIR)/libwildcard/wildcard.h
+	install -m644 libwildcard.a $(LIBDIR)/libwildcard.a
+	install -m644 libwildcard.pc $(LIBDIR)/pkgconfig/libwildcard.pc
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(INCLUDEDIR)/libwildcard/wildcard.h
+	rm -f $(LIBDIR)/libwildcard.a
+	rm -f $(LIBDIR)/pkgconfig/libwildcard.pc
+
+.PHONY: clean
+clean:
+	rm -rf libwildcard.a libwildcard.pc *.o *.uto *.gc?? *.coverage
+
+.PHONY: distclean
+distclean: clean
+	rm -f Makefile config.status
