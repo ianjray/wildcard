@@ -68,6 +68,8 @@ int main()
     assert(r == 0);
 
     // Single wildcard.
+    r = wildcard_match("*abc", "ab");
+    assert(r == -ESRCH);
     r = wildcard_match("*abc", "abc");
     assert(r == 0);
     r = wildcard_match("*abc", "_abc");

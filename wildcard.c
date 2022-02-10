@@ -7,10 +7,8 @@
 /// @return pointer To last @c len characters in @c str, or NULL if string too short.
 static const char *string_tail(const char *str, size_t len)
 {
-    if (str) {
-        if (strlen(str) >= len) {
-            return strchr(str, 0) - len;
-        }
+    if (strlen(str) >= len) {
+        return strchr(str, 0) - len;
     }
     return NULL;
 }
