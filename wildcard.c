@@ -2,6 +2,11 @@
 
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+
+#define ESC '\\'
+
+#define ESCAPE_SUPPORTED ((flags & WILDCARD_NOESCAPE) == 0)
 
 /// @return pointer To last @c len characters in @c str, or NULL if string too short.
 static const char *string_tail(const char *str, size_t len)
@@ -14,27 +19,38 @@ static const char *string_tail(const char *str, size_t len)
 
 /// Attempt to match word bounded by @c begin and @c end against @c str.
 /// @return int Number of matched characters, or negative errno otherwise.
-static int match_word(const char *str, const char *begin, const char *end)
+static ssize_t match_word(int flags, const char *str, const char *begin, const char *end)
 {
     const char *p = begin;
+    int escaped = 0;
+    ssize_t n = 0;
+
     while (p < end) {
-        if ((*p == '?' && *str) || (*p == *str))  {
+        if (ESCAPE_SUPPORTED && !escaped && *p == ESC) {
+            escaped = 1;
+            p++;
+
+        } else if (*p == *str || (!escaped && *p == '?' && *str)) {
             p++;
             str++;
+            n++;
+            escaped = 0;
+
         } else {
             return -ESRCH;
         }
     }
-    return (int)(end - begin);
+
+    return n;
 }
 
 /// Attempt to find word bounded by @c begin and @c end in the @c str.
 /// @return pointer To found word, or NULL otherwise.
-static const char *find_word(const char *str, const char *begin, const char *end)
+static const char *find_word(int flags, const char *str, const char *begin, const char *end)
 {
     if (str) {
         for (; *str; ++str) {
-            if (match_word(str, begin, end) >= 0) {
+            if (match_word(flags, str, begin, end) >= 0) {
                 return str;
             }
         }
@@ -42,11 +58,12 @@ static const char *find_word(const char *str, const char *begin, const char *end
     return NULL;
 }
 
-int wildcard_match(const char *pattern, const char *text)
+int wildcard_match(const char *pattern, const char *text, int flags)
 {
     const char *p = pattern;
     const char *begin;
-    int n;
+    int escaped = 0;
+    ssize_t n;
 
     if (!pattern || !text) {
         return -EINVAL;
@@ -81,12 +98,26 @@ int wildcard_match(const char *pattern, const char *text)
 
             // Consume word from pattern string.
             // (A word is a sequence of characters optionally including '?'.)
-            for (begin = p; *p && *p != '*'; p++) {
+            n = 0;
+            for (begin = p, escaped = 0; *p; p++) {
+                if (escaped) {
+                    escaped = 0;
+                    n++;
+
+                } else if (ESCAPE_SUPPORTED && *p == ESC) {
+                    escaped = 1;
+
+                } else if (*p == '*') {
+                    break;
+
+                } else {
+                    n++;
+                }
             }
 
             if (*p) {
                 // Pattern continues.  Search for word in text.
-                text = find_word(text, begin, p);
+                text = find_word(flags, text, begin, p);
                 if (!text) {
                     return -ESRCH;
                 }
@@ -97,14 +128,14 @@ int wildcard_match(const char *pattern, const char *text)
 
             } else {
                 // End of pattern reached.  Match word against tail of text.
-                text = string_tail(text, (size_t)(p - begin));
+                text = string_tail(text, (size_t)n);
                 if (!text) {
                     return -ESRCH;
                 }
 
-                n = match_word(text, begin, p);
+                n = match_word(flags, text, begin, p);
                 if (n < 0) {
-                    return n;
+                    return (int)n;
                 }
 
                 // Advance past "word" in text.
@@ -113,12 +144,21 @@ int wildcard_match(const char *pattern, const char *text)
 
         } else {
             // Consume word from pattern string.
-            for (begin = p; *p && *p != '*'; p++) {
+            for (begin = p, escaped = 0; *p; p++) {
+                if (escaped) {
+                    escaped = 0;
+
+                } else if (ESCAPE_SUPPORTED && *p == ESC) {
+                    escaped = 1;
+
+                } else if (*p == '*') {
+                    break;
+                }
             }
 
-            n = match_word(text, begin, p);
+            n = match_word(flags, text, begin, p);
             if (n < 0) {
-                return n;
+                return (int)n;
             }
 
             // Advance past "word" in text.
