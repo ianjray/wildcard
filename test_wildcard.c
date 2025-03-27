@@ -32,100 +32,159 @@ int main(void)
     int r;
 
     // Invalid pointers.
-    r = wildcard_match(NULL, NULL);
+    r = wildcard_match(NULL, NULL, 0);
     assert(r == -EINVAL);
-    r = wildcard_match(NULL, "");
+    r = wildcard_match(NULL, "", 0);
     assert(r == -EINVAL);
-    r = wildcard_match("", NULL);
+    r = wildcard_match("", NULL, 0);
     assert(r == -EINVAL);
 
     // Empty strings.
-    r = wildcard_match("", "");
+    r = wildcard_match("", "", 0);
     assert(r == 0);
-    r = wildcard_match("*", "");
+    r = wildcard_match("*", "", 0);
     assert(r == 0);
-    r = wildcard_match("?", "");
+    r = wildcard_match("?", "", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("", "a");
+    r = wildcard_match("", "a", 0);
     assert(r == -ESRCH);
 
     // Simple strings.
-    r = wildcard_match("?", "?");
+    r = wildcard_match("?", "?", 0);
     assert(r == 0);
-    r = wildcard_match("?", "f");
+    r = wildcard_match("?", "f", 0);
     assert(r == 0);
-    r = wildcard_match("?", "fo");
+    r = wildcard_match("?", "fo", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("??", "fo");
+    r = wildcard_match("??", "fo", 0);
     assert(r == 0);
-    r = wildcard_match("?o", "fo");
+    r = wildcard_match("?o", "fo", 0);
     assert(r == 0);
-    r = wildcard_match("Abc", "abc");
+    r = wildcard_match("Abc", "abc", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("abc", "abc");
+    r = wildcard_match("abc", "abc", 0);
     assert(r == 0);
+
+    r = wildcard_match("\\?", "?", 0);
+    assert(r == 0);
+    r = wildcard_match("\\?", "x", 0);
+    assert(r == -ESRCH);
+    r = wildcard_match("\\?o", "?o", 0);
+    assert(r == 0);
+    r = wildcard_match("\\?o", "xo", 0);
+    assert(r == -ESRCH);
 
     // Single wildcard.
-    r = wildcard_match("*abc", "ab");
+    r = wildcard_match("*abc", "ab", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("*abc", "abc");
+    r = wildcard_match("*abc", "abc", 0);
     assert(r == 0);
-    r = wildcard_match("*abc", "_abc");
+    r = wildcard_match("*abc", "_abc", 0);
     assert(r == 0);
-    r = wildcard_match("*abc", "a_bc");
+    r = wildcard_match("*abc", "a_bc", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("a*bc", "abc");
+    r = wildcard_match("a*bc", "abc", 0);
     assert(r == 0);
-    r = wildcard_match("a*bc", "a_bc");
+    r = wildcard_match("a*bc", "a_bc", 0);
     assert(r == 0);
-    r = wildcard_match("a*bc", "ab_c");
+    r = wildcard_match("a*bc", "ab_c", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("ab*c", "abc");
+    r = wildcard_match("ab*c", "abc", 0);
     assert(r == 0);
-    r = wildcard_match("ab*c", "ab_c");
+    r = wildcard_match("ab*c", "ab_c", 0);
     assert(r == 0);
-    r = wildcard_match("ab*c", "abc_");
+    r = wildcard_match("ab*c", "abc_", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("abc*", "abc");
+    r = wildcard_match("abc*", "abc", 0);
     assert(r == 0);
-    r = wildcard_match("abc*", "abc_");
+    r = wildcard_match("abc*", "abc_", 0);
     assert(r == 0);
-    r = wildcard_match("abc*", "ab_c");
+    r = wildcard_match("abc*", "ab_c", 0);
     assert(r == -ESRCH);
 
-    r = wildcard_match("*B?",   "ABC_B");
+    r = wildcard_match("*B?",   "ABC_B", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("*B?",   "ABC__D");
+    r = wildcard_match("*B?",   "ABC__D", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("*B?",   "ABC_BD");
+    r = wildcard_match("*B?",   "ABC_BD", 0);
     assert(r == 0);
-    r = wildcard_match("*B?_*", "ABC_BD");
+    r = wildcard_match("*B?_*", "ABC_BD", 0);
+    assert(r == 0);
+
+    r = wildcard_match("\\*abc", "*abc", 0);
+    assert(r == 0);
+    r = wildcard_match("\\*abc", "_abc", 0);
+    assert(r == -ESRCH);
+    r = wildcard_match("*a\\*c", "_a*c", 0);
     assert(r == 0);
 
     // Multiple wildcard.
-    r = wildcard_match("a*foo*b", "a__fo_foo__b");
+    r = wildcard_match("a*foo*b", "a__fo_foo__b", 0);
     assert(r == 0);
-    r = wildcard_match("a*foo*b", "a__fo_o__b");
+    r = wildcard_match("a*foo*b", "a__fo_o__b", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("****?***?**?*?e*jkl", "abcdefghijkl");
+    r = wildcard_match("****?***?**?*?e*jkl", "abcdefghijkl", 0);
     assert(r == 0);
-    r = wildcard_match("****?***?**?*?e*jkl", "abcdEfghijkl");
+    r = wildcard_match("****?***?**?*?e*jkl", "abcdEfghijkl", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("a?c?e*jkl*op", "abcdefghijklmnop");
+    r = wildcard_match("a?c?e*jkl*op", "abcdefghijklmnop", 0);
     assert(r == 0);
-    r = wildcard_match("a?c?e*jkl*op", "abcdefghiJklmnop");
+    r = wildcard_match("a?c?e*jkl*op", "abcdefghiJklmnop", 0);
     assert(r == -ESRCH);
-    r = wildcard_match("****?***?**?*?", "abcd");
+    r = wildcard_match("****?***?**?*?", "abcd", 0);
     assert(r == 0);
-    r = wildcard_match("****?***?**?*?", "abc");
+    r = wildcard_match("****?***?**?*?", "abc", 0);
     assert(r == -ESRCH);
 
-    // Wikipedia.
-    r = wildcard_match("da*da*la*", "daaadabadmanda");
-    assert(r == -ESRCH);
-    r = wildcard_match("da*da*da*", "daaadabadmanda");
+    r = wildcard_match("*ab*cd*", "abcd", 0);
     assert(r == 0);
-    r = wildcard_match("*?", "xx");
+    r = wildcard_match("*ab*cd*", "_abcd", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "abcd_", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "_abcd_", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "ab_cd", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "_ab_cd_", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "ab_cd_", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd*", "_ab_cd_", 0);
+    assert(r == 0);
+
+    r = wildcard_match("\\*ab*cd*", "*abcd", 0);
+    assert(r == 0);
+    r = wildcard_match("\\*ab*cd*", "_abcd", 0);
+    assert(r == -ESRCH);
+    r = wildcard_match("*ab\\*cd*", "_ab*cd", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab\\*cd*", "_ab_cd", 0);
+    assert(r == -ESRCH);
+    r = wildcard_match("*ab*cd\\*", "abcd*", 0);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd\\*", "abcd_", 0);
+    assert(r == -ESRCH);
+
+    r = wildcard_match("\\*ab*cd*", "\\abcd", WILDCARD_NOESCAPE);
+    assert(r == 0);
+    r = wildcard_match("\\*ab*cd*", "\\_abcd", WILDCARD_NOESCAPE);
+    assert(r == 0);
+    r = wildcard_match("*ab\\*cd*", "_ab\\cd", WILDCARD_NOESCAPE);
+    assert(r == 0);
+    r = wildcard_match("*ab\\*cd*", "_ab\\_cd", WILDCARD_NOESCAPE);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd\\*", "abcd\\", WILDCARD_NOESCAPE);
+    assert(r == 0);
+    r = wildcard_match("*ab*cd\\*", "abcd\\_", WILDCARD_NOESCAPE);
+    assert(r == 0);
+
+    // Wikipedia.
+    r = wildcard_match("da*da*la*", "daaadabadmanda", 0);
+    assert(r == -ESRCH);
+    r = wildcard_match("da*da*da*", "daaadabadmanda", 0);
+    assert(r == 0);
+    r = wildcard_match("*?", "xx", 0);
     assert(r == 0);
 
     {
@@ -133,10 +192,10 @@ int main(void)
         char *file = a_n(100);
         size_t n = 2;
         char *pattern = a_star_n_b(n);
-        r = wildcard_match(pattern, file);
+        r = wildcard_match(pattern, file, 0);
         assert(r == -ESRCH);
         pattern[n * 2] = '\0';
-        r = wildcard_match(pattern, file);
+        r = wildcard_match(pattern, file, 0);
         assert(r == 0);
         free(pattern);
         free(file);
