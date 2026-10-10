@@ -1,5 +1,5 @@
-#ifndef LIBWILDCARD_WILDCARD_H_
-#define LIBWILDCARD_WILDCARD_H_
+#ifndef LIBWILD_WILDCARD_H_
+#define LIBWILD_WILDCARD_H_
 
 /// When set, backslashes are treated as literal characters, not escape sequences.
 #define WILDCARD_NOESCAPE (1 << 0)

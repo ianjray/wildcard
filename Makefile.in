@@ -15,9 +15,9 @@ LIBDIR     = @PREFIX@/lib
 PREFIX     = @PREFIX@
 
 .PHONY: all
-all: libwildcard.a
+all: libwild.a
 
-libwildcard.a: wildcard.o
+libwild.a: wildcard.o
 	$(LD) -r $< -o $@
 
 .c.o:
@@ -32,8 +32,8 @@ wildcard.coverage: wildcard.uto tests/test_wildcard.c
 	$(CCOV) wildcard.c
 	! grep "#####" wildcard.c.gcov |grep -ve "// UNREACHABLE$$"
 
-libwildcard.pc:
-	( echo 'Name: libwildcard' ;\
+libwild.pc:
+	( echo 'Name: libwild' ;\
 	echo 'Version: $(VERSION)' ;\
 	echo 'Description: Wildcard matching in C' ;\
 	echo 'prefix=$(PREFIX)' ;\
@@ -41,29 +41,29 @@ libwildcard.pc:
 	echo 'includedir=$${prefix}/include' ;\
 	echo 'libdir=$${prefix}/lib' ;\
 	echo 'Cflags: -I$${includedir}' ;\
-	echo 'Libs: -L$${libdir} -lwildcard' ) > $@
+	echo 'Libs: -L$${libdir} -lwild' ) > $@
 
 .PHONY: test
 test: wildcard.coverage
 
 .PHONY: install
-install: wildcard.h libwildcard.a libwildcard.pc
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/libwildcard
+install: wildcard.h libwild.a libwild.pc
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)/libwild
 	mkdir -p $(DESTDIR)$(LIBDIR)/pkgconfig
-	install -m644 wildcard.h $(DESTDIR)$(INCLUDEDIR)/libwildcard/wildcard.h
-	install -m644 libwildcard.a $(DESTDIR)$(LIBDIR)/libwildcard.a
-	install -m644 libwildcard.pc $(DESTDIR)$(LIBDIR)/pkgconfig/libwildcard.pc
+	install -m644 wildcard.h $(DESTDIR)$(INCLUDEDIR)/libwild/wildcard.h
+	install -m644 libwild.a $(DESTDIR)$(LIBDIR)/libwild.a
+	install -m644 libwild.pc $(DESTDIR)$(LIBDIR)/pkgconfig/libwild.pc
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(DESTDIR)$(INCLUDEDIR)/libwildcard/wildcard.h
-	rm -f $(DESTDIR)$(LIBDIR)/libwildcard.a
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/libwildcard.pc
+	rm -f $(DESTDIR)$(INCLUDEDIR)/libwild/wildcard.h
+	rm -f $(DESTDIR)$(LIBDIR)/libwild.a
+	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/libwild.pc
 
 .PHONY: clean
 clean:
 	rm -f *.o **/*.o *.uto **/*.uto *.gc?? **/*.gc?? *.coverage
-	rm -f libwildcard.a libwildcard.pc
+	rm -f libwild.a libwild.pc
 
 .PHONY: distclean
 distclean: clean
